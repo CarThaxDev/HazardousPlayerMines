@@ -1,0 +1,5 @@
+name: HazardousPlayerMines
+version: '${project.version}'
+main: com.github.carthax08.hazardousplayermines.PluginMain
+api-version: 1.19
+authors: [ CarThax ]
