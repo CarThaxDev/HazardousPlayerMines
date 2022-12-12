@@ -56,9 +56,9 @@ public final class PluginMain extends JavaPlugin {
 
         // Other init stuff
         initCommands();
-        logger.info(prefix + "Commands registered...");
+        log("Commands registered...");
         initEvents();
-        logger.info(prefix + "Events registered...");
+        log("Events registered...");
         initHandlers();
         log("Handlers registered...");
         log("Plugin initialization successful");
