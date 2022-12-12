@@ -7,9 +7,15 @@ public class Settings {
     @Node("prefix")
     private String prefix;
 
+    @Node("commandAliases")
+    private String[] aliases;
+
     public String getPrefix() {
         return prefix;
     }
 
 
+    public String[] getCustomAliases() {
+        return aliases;
+    }
 }

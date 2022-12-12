@@ -1,8 +1,10 @@
 package com.github.carthax08.hazardousplayermines;
 
+import co.aikar.commands.PaperCommandManager;
 import com.clubobsidian.wrappy.Configuration;
 import com.clubobsidian.wrappy.ConfigurationSection;
 import com.clubobsidian.wrappy.transformer.NodeTransformer;
+import com.github.carthax08.hazardousplayermines.commands.GUICommand;
 import com.github.carthax08.hazardousplayermines.config.Database;
 import com.github.carthax08.hazardousplayermines.config.Settings;
 import com.github.carthax08.hazardousplayermines.database.DatabaseHandler;
@@ -14,11 +16,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Logger;
 
-@SuppressWarnings("rawtypes")
+@SuppressWarnings("rawtypes, unused")
 public final class PluginMain extends JavaPlugin {
 
-    private static String prefix;
+    private String prefix;
     private Configuration config;
+    private Logger logger;
     private Settings settings;
     private Database database;
     private DatabaseHandler databaseHandler;
@@ -47,9 +50,9 @@ public final class PluginMain extends JavaPlugin {
 
         prefix = settings.getPrefix();
 
-        Logger logger = getLogger();
+        logger = this.getLogger();
 
-        logger.info(prefix + "Config saved and loaded...");
+        log("Config saved and loaded...");
 
         // Other init stuff
         initCommands();
@@ -57,8 +60,8 @@ public final class PluginMain extends JavaPlugin {
         initEvents();
         logger.info(prefix + "Events registered...");
         initHandlers();
-        logger.info(prefix + "Handlers registered...");
-        logger.info(prefix + "Plugin initialization successful");
+        log("Handlers registered...");
+        log("Plugin initialization successful");
 
     }
 
@@ -68,7 +71,14 @@ public final class PluginMain extends JavaPlugin {
     }
 
     private void initCommands() {
+
         // Init commands
+        PaperCommandManager commandManager = new PaperCommandManager(this);
+        commandManager.enableUnstableAPI("help");
+
+        commandManager.getCommandReplacements().addReplacement("custom", String.join("|", settings.getCustomAliases()));
+
+        commandManager.registerCommand(new GUICommand());
     }
 
     private void initEvents() {
@@ -77,13 +87,24 @@ public final class PluginMain extends JavaPlugin {
 
     private void initHandlers() {
         // Init handlers
+
         // Database Handler
         databaseHandler = new DatabaseHandler(database);
-        databaseHandler.execute("CREATE TABLE IF NOT EXISTS playermines " +
-                "(owner varchar(36) NOT NULL, " +
-                "blocks varchar(255), " +
-                "location varchar(255), " +
-                "PRIMARY KEY (owner))");
+        if (!databaseHandler.execute("CREATE TABLE IF NOT EXISTS playermines " +
+                "(uuid varchar(36) NOT NULL, " + //UUID for the mine, generated at creation
+                "owner varchar(36) NOT NULL, " + //uuid of player
+                "blocks varchar(255) NOT NULL, " + //list of blocks
+                "location varchar(255) NOT NULL, " + //X1:Y1:Z1:X2:Y2:Z2
+                "type varchar(16) NOT NULL, " + //PRIVATE, PUBLIC, INVITE - See allowed players
+                "allowed-players varchar(255), " + // null if not invite, otherwise list of players uuids
+                "upkeep int unsigned NOT NULL," + //Upkeep cost of the mine
+                "reset varchar(255) NOT NULL," + //PERCENT:99, TIME:1d
+                "balance bigint unsigned NOT NULL DEFAULT 0," + //The mine's current balance, used first for upkeep
+                "PRIMARY KEY (uuid))")) {
+
+            getLogger().severe(prefix + "Failed to create table in database");
+            getServer().getPluginManager().disablePlugin(this);
+        }
     }
 
     public static PluginMain get() {
@@ -100,5 +121,13 @@ public final class PluginMain extends JavaPlugin {
 
     public DatabaseHandler getDatabaseHandler() {
         return databaseHandler;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void log(String message){
+        logger.info(prefix + message);
     }
 }
