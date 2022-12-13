@@ -109,8 +109,8 @@ public final class PluginMain extends JavaPlugin {
         // Database Handler
         databaseHandler = new DatabaseHandler(database);
         if (!databaseHandler.execute("CREATE TABLE IF NOT EXISTS playermines " +
-                "(uuid varchar(36) NOT NULL, " + //UUID for the mine, generated at creation
-                "owner varchar(36) NOT NULL, " + //uuid of player
+                "(uuid uuid NOT NULL, " + //UUID for the mine, generated at creation
+                "owner uuid NOT NULL, " + //uuid of player
                 "blocks varchar(255) NOT NULL, " + //list of blocks
                 "location varchar(255) NOT NULL, " + //X1:Y1:Z1:X2:Y2:Z2
                 "type varchar(16) NOT NULL, " + //PRIVATE, PUBLIC, INVITE - See allowed players
@@ -118,6 +118,8 @@ public final class PluginMain extends JavaPlugin {
                 "upkeep int unsigned NOT NULL," + //Upkeep cost of the mine
                 "reset varchar(255) NOT NULL," + //PERCENT:99, TIME:1d
                 "balance bigint unsigned NOT NULL DEFAULT 0," + //The mine's current balance, used first for upkeep
+                "pullFromOwnerBalance int(1) NOT NULL DEFAULT 0," +
+                "mineActiveState int(1) NOT NULL," +
                 "PRIMARY KEY (uuid))")) {
 
             getLogger().severe(prefix + "Failed to create mines table in database");
