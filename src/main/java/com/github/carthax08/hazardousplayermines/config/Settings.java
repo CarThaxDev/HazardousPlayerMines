@@ -10,12 +10,18 @@ public class Settings {
     @Node("commandAliases")
     private String[] aliases;
 
+    @Node("notificationDelay")
+    private double notificationDelay;
+
     public String getPrefix() {
         return prefix;
     }
-
-
+    
     public String[] getCustomAliases() {
         return aliases;
+    }
+    
+    public double getNotificationDelay(){
+        return notificationDelay;
     }
 }

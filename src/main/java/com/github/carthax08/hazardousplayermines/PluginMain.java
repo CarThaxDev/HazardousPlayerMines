@@ -6,9 +6,12 @@ import com.clubobsidian.wrappy.ConfigurationSection;
 import com.clubobsidian.wrappy.transformer.NodeTransformer;
 import com.github.carthax08.hazardousplayermines.commands.GUICommand;
 import com.github.carthax08.hazardousplayermines.config.Database;
+import com.github.carthax08.hazardousplayermines.config.Messages;
 import com.github.carthax08.hazardousplayermines.config.Settings;
 import com.github.carthax08.hazardousplayermines.database.DatabaseHandler;
 import com.github.carthax08.hazardousplayermines.transformers.ChatColorTransformer;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -24,7 +27,9 @@ public final class PluginMain extends JavaPlugin {
     private Logger logger;
     private Settings settings;
     private Database database;
+    private Messages messages;
     private DatabaseHandler databaseHandler;
+    private Economy economy;
 
     private static PluginMain instance;
 
@@ -38,15 +43,18 @@ public final class PluginMain extends JavaPlugin {
 
         ConfigurationSection settingsSection = config.getConfigurationSection("settings");
         ConfigurationSection databaseSection = config.getConfigurationSection("database");
+        ConfigurationSection messagesSection = config.getConfigurationSection("messages");
 
         settings = new Settings();
         database = new Database();
+        messages = new Messages();
 
         Collection<NodeTransformer> transformers = new ArrayList<>();
         transformers.add(new ChatColorTransformer());
 
         settingsSection.inject(settings, transformers);
         databaseSection.inject(database);
+        messagesSection.inject(messages, transformers);
 
         prefix = settings.getPrefix();
 
@@ -60,6 +68,16 @@ public final class PluginMain extends JavaPlugin {
         initEvents();
         log("Events registered...");
         initHandlers();
+        if(getServer().getPluginManager().getPlugin("Vault") == null){
+            logger.severe(prefix + "Vault is missing or broken, Get it Fixed you idiot!");
+            getServer().getPluginManager().disablePlugin(this);
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if(rsp == null){
+            logger.severe(prefix + "You must have an economy plugin with vault you idiot");
+            getServer().getPluginManager().disablePlugin(this);
+        }
+        economy = rsp.getProvider();
         log("Handlers registered...");
         log("Plugin initialization successful");
 
@@ -102,7 +120,16 @@ public final class PluginMain extends JavaPlugin {
                 "balance bigint unsigned NOT NULL DEFAULT 0," + //The mine's current balance, used first for upkeep
                 "PRIMARY KEY (uuid))")) {
 
-            getLogger().severe(prefix + "Failed to create table in database");
+            getLogger().severe(prefix + "Failed to create mines table in database");
+            getServer().getPluginManager().disablePlugin(this);
+        }
+        if(!databaseHandler.execute("CREATE TABLE IF NOT EXISTS notifications " +
+                "(id NOT NULL AUTO_INCREMENT," +
+                "player uuid NOT NULL," +
+                "message varchar(255) NOT NULL," +
+                "PRIMARY KEY (id))")) {
+
+            getLogger().severe(prefix + "Failed to create notifications table in database");
             getServer().getPluginManager().disablePlugin(this);
         }
     }
@@ -119,6 +146,10 @@ public final class PluginMain extends JavaPlugin {
         return settings;
     }
 
+    public Messages getMessages(){
+        return messages;
+    }
+
     public DatabaseHandler getDatabaseHandler() {
         return databaseHandler;
     }
@@ -129,5 +160,9 @@ public final class PluginMain extends JavaPlugin {
 
     public void log(String message){
         logger.info(prefix + message);
+    }
+
+    public Economy getEconomy(){
+        return economy;
     }
 }
